@@ -4,6 +4,7 @@ var url = require('url');
 var fs = require('fs');
 var crypto = require('crypto');
 var path = require('path');
+var port = 8080;
 
 var server = http.createServer(function(request, response) {
     var uri = url.parse(request.url);
@@ -13,7 +14,7 @@ var server = http.createServer(function(request, response) {
     //var url = request.url;
     var body = [];
     
-    //Both mehods should be POST comparing against hashed passwords 
+    //Both mehods should be POST comparing against salted & hashed passwords 
     //with requests behind HTTPS
     //Not sure if self-signing certs are permitted for this test
     //Not sure if tester will be using Curl or web-browser,
