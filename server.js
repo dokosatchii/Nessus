@@ -5,6 +5,8 @@ var fs = require('fs');
 var crypto = require('crypto');
 var path = require('path');
 var port = 8080;
+var config = require('./configMods.js'); 
+var auth = require('./authenticate.js'); 
 
 var server = http.createServer(function(request, response) {
     var uri = url.parse(request.url);
@@ -62,6 +64,175 @@ var server = http.createServer(function(request, response) {
         response.end();
     }
 
+    if(uri.pathname == '/config' && method == 'GET') {
+        var credentials = parseQuery(uri.query);
+        if('api_key' in credentials) {
+            auth.isAuthorized(credentials['api_key'], function (allowed) {
+                if(allowed == 200) {
+                    var key;
+                    var page;
+                    var results = 20;
+                    if('sort' in credentials) {
+                        key = credentials['sort']; 
+                    }
+                    if('page' in credentials && !isNaN(credentials['page'])) {
+                        page = credentials['page'];        
+                    }
+
+                    if('results' in credentials && !isNaN(credentials['results'])) {
+                        results = credentials['results'];        
+                    }
+
+                    console.log(credentials);
+                    config.retrieveConfig(key, page, results, function(data) {
+                        response.writeHead(200);
+                        response.write(JSON.stringify(data));
+                        response.end();
+                    });
+                }
+                else{
+                    response.writeHead(401);
+                    response.write('Not authorized to acces this resource');
+                    response.end();
+                }
+            });
+        }
+        else {
+            response.writeHead(401);
+            response.write('API key was not supplied');
+            response.end();
+        }
+    }
+
+    if(uri.pathname == '/config' && method == 'DELETE') {
+        var credentials = parseQuery(uri.query);
+        if('api_key' in credentials) {
+            auth.isAuthorized(credentials['api_key'], function (allowed) {
+                if(allowed == 200) {
+                    if('name' in credentials) {
+                        config.deleteConfig(credentials['name'], function(deleted) {
+                            if(deleted == 204) {
+                                response.writeHead(204);
+                                response.write('Resource removed');
+                                response.end();
+                            }
+                            else {
+                                console.log('Error reading disk or file');
+                                response.writeHead(404);
+                                response.end();
+                            }
+                        });
+                    }
+                    else {
+                        response.writeHead(400);
+                        response.write('Invalid request, must specify a name paramter');
+                        response.end();
+                    }
+                }
+                else{
+                    response.writeHead(401);
+                    response.write('Not authorized to acces this resource');
+                    response.end();
+                }
+            });
+        }
+        else {
+            response.writeHead(401);
+            response.write('API key was not supplied');
+            response.end();
+        }
+    }
+
+    if(uri.pathname == '/config' && method == 'PUT') {
+        var credentials = parseQuery(uri.query);
+        if('api_key' in credentials) {
+            auth.isAuthorized(credentials['api_key'], function (allowed) {
+                if(allowed == 200) {
+                    if('configname' in credentials) {
+                        var keys = Object.keys(credentials);
+                        var mods = {};
+                        for(var entry in keys) {
+                            if(keys[entry] != 'api_key' && keys[entry] != 'configname') {
+                                mods[keys[entry]] = credentials[keys[entry]];
+                            }
+                        }
+                        config.modifyConfig(credentials['configname'], mods, function(modified) {
+                            if(modified == 201) {
+                                response.writeHead(201);
+                                response.write('Resource modified');
+                                response.end();
+                            }
+                            else {
+                                console.log('Error reading disk or file');
+                                response.writeHead(404);
+                                response.end();
+                            }
+                        });
+                    }
+                    else {
+                        response.writeHead(400);
+                        response.write('Invalid request, must specify a name paramter');
+                        response.end();
+                    }
+                }
+                else{
+                    response.writeHead(401);
+                    response.write('Not authorized to acces this resource');
+                    response.end();
+                }
+            });
+        }
+        else {
+            response.writeHead(401);
+            response.write('API key was not supplied');
+            response.end();
+        }
+    }
+    
+    if(uri.pathname == '/config' && method == 'POST') {
+        var credentials = parseQuery(uri.query);
+        if('api_key' in credentials) {
+            auth.isAuthorized(credentials['api_key'], function (allowed) {
+                if(allowed == 200) {
+                    var keys = Object.keys(credentials);
+                    var mods = {};
+                    for(var entry in keys) {
+                        if(keys[entry] != 'api_key') {
+                            mods[keys[entry]] = credentials[keys[entry]];
+                        }
+                    }
+                    config.createConfig(mods, function(modified) {
+                        if(modified == 204) {
+                            response.writeHead(204);
+                            response.write('New resource created');
+                            response.end();
+                        }
+                        else if(modified == 406) {
+                            response.writeHead(406);
+                            response.write('Not enough paramters');
+                            response.end();
+                        }
+                        else {
+                            console.log('Error reading disk or file');
+                            response.writeHead(404);
+                            response.end();
+                        }
+                    });
+                }
+                else{
+                    response.writeHead(401);
+                    response.write('Not authorized to acces this resource');
+                    response.end();
+                }
+            });
+        }
+        else {
+            response.writeHead(401);
+            response.write('API key was not supplied');
+            response.end();
+        }
+    }
+
     request.on('error', function(err) {
         console.error(err);
     }).on('data',function(chunk) {
@@ -77,32 +248,34 @@ function generateRandomString() {
 
 function deleteToken(user) {
     filename = path.join(process.cwd(), 'tokens.json');
-    fs.exists(filename, function(exists) {
-        if(exists) {
-            var jsonContent = fs.readFileSync(filename);
-            var users = JSON.parse(jsonContent);
-            if(user in users) {
-                delete users[user];
-                fs.writeFile(filename, JSON.stringify(users), function(err) {
-                    if(err) {
-                        return console.log(err);
-                    }
-                    console.log('Token Removed');
-                });
-            } 
+    fs.readFile(filename, function(err, data) {
+        if(err) {
+            console.log(err);
+        }else {
+            var jsonContent = JSON.parse(data);
+            var users = [];
+            jsonContent.forEach(function(value) {
+                if(value['name'] != user) {
+                    users.push(value);
+                }
+            });
+            fs.writeFile(filename, JSON.stringify(users), function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+                console.log('Token Removed');
+            });
         }
-    });
     return 200;
+    });
 }
     
-function saveToken(data, user) { 
+function saveToken(token, user) { 
     filename = path.join(process.cwd(), 'tokens.json');
-    fs.exists(filename, function(exists) {
-        if(exists) {
-            var jsonContent = fs.readFileSync(filename);
-            var users = JSON.parse(jsonContent);
-            console.log(users);
-            users[user] = data;
+    fs.readFile(filename, function(err, data) {
+        if(err) {
+            var users = [];
+            users.push({'name':user,'token':token});
             fs.writeFile(filename, JSON.stringify(users), function(err) {
                 if(err) {
                     return console.log(err);
@@ -111,9 +284,18 @@ function saveToken(data, user) {
             });
         }
         else {
-            token = {};
-            token[user] = data;
-            fs.appendFile(filename, JSON.stringify(token), function(err) {
+            var users = JSON.parse(data);
+            var found = 0;
+            users.forEach(function(value) {
+                if(value['name'] == user) {
+                    found = 1;
+                    return value['name'] = token;
+                }
+            });
+            if(!found) {
+                users.push({'name':user,'token':token});
+            }
+            fs.writeFile(filename, JSON.stringify(users), function(err) {
                 if(err) {
                     return console.log(err);
                 }
@@ -155,18 +337,20 @@ function verifyUser(username, password) {
 function parseQuery(query) {
     options = [];
 
-    if(query.includes('&')){
-        values = query.split('&');
-        for(i = 0; i < values.length; i++) {
-            key = values[i].split('=');
-            if(key.length == 2) {
-                options[key[0]] = key[1];
+    if(query != null) {
+        if(query.includes('&')){
+            values = query.split('&');
+            for(i = 0; i < values.length; i++) {
+                key = values[i].split('=');
+                if(key.length == 2) {
+                    options[key[0]] = key[1];
+                }
             }
         }
-    }
-    else {
-        key = query.split('=');
-        options[key[0]] = key[1];
+        else {
+            key = query.split('=');
+            options[key[0]] = key[1];
+        }
     }
     return options;
 }

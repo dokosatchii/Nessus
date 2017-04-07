@@ -6,12 +6,50 @@ var getConfigFile = function() {
     return filename;
 }
 
-var retrieveConfig = function(callback) {
+var retrieveConfig = function(key, page, results, callback) {
+    var valid_sorts = ['name', 'hostname', 'port', 'username'];
     var filename = getConfigFile();
     fs.readFile(filename, function(err, data) {
         if(err) callback(404);
         data = JSON.parse(data);
-        callback(data);       
+        if(key != null && valid_sorts.includes(key)) {
+            console.log(data);
+            data['configurations'].sort(function(a,b) {
+                if(a[key] < b[key]) {
+                    return -1;
+                }
+                if(a[key] > b[key]) {
+                    return 1;
+                }
+                return 0;
+            });   
+        }
+        var items = data['configurations'].length;
+        console.log(data);
+        if(page != null)
+        {
+            if(page*results >= items) {
+                var subset = data['configurations'].splice(0,items - results);         
+                console.log('Larger');
+                console.log(items);
+                console.log(results);
+                console.log(data);
+            }
+            else if(page == 1) {
+                data['configurations'].splice(results);
+                console.log(data);
+                console.log('1 Page');
+            }
+            else {
+                data['configurations'].splice(0, (page*results)-results);
+                data['configurations'].splice(results-1);
+                console.log(data);   
+            }
+            callback(data);
+        }
+        else {
+            callback(data);       
+        }
     });
 }
 function hasRequiredFields(data) {
@@ -80,7 +118,7 @@ var retrieveSpecificConfig = function(name, callback) {
                 }
             });
             if(config.length > 0) {
-                callback(config);
+                callback(config[0]);
             } else {
                 callback(404);
             }
