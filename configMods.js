@@ -63,7 +63,7 @@ function hasRequiredFields(data) {
 }
 
 var createConfig = function(newConfig, callback) {
-    retrieveConfig(function(data) {
+    retrieveConfig(null, null, null, function(data) {
         if(data != 404) {
             if(hasRequiredFields(newConfig)){
                 data['configurations'].push(newConfig);
@@ -86,7 +86,7 @@ var createConfig = function(newConfig, callback) {
 
 var deleteConfig = function(name, callback) {
     //TOOD: Delete configuration based on multiple criteria
-    retrieveConfig(function(data) {
+    retrieveConfig(null, null, null, function(data) {
         if(data != 404) {
             var new_config = {};
             new_config['configurations'] = data['configurations'].filter(function(value) {
@@ -110,7 +110,7 @@ var deleteConfig = function(name, callback) {
 
 var retrieveSpecificConfig = function(name, callback) {
     //TODO Retrieve configuration based on multiple criteria
-    retrieveConfig(function(data) {
+    retrieveConfig(null, null, null, function(data) {
         if(data != 404) {
             var config = data['configurations'].filter(function(value) {
                 if(value['name'] == name){
