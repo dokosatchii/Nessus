@@ -31,6 +31,7 @@ This will remove the token from token.json
 ### Configuration modifications
 As stated earlier, the configuration endpoint requires you to pass in an API key in order for you to access the configuration resources.
 
+#### Retrieve
 To retrieve a full list of configurations, hit the end point: 
 
 `https://localhost:8080/config?api_key="API KEY"`
@@ -47,19 +48,19 @@ And of course, you can string the above commands together:
 
 `https://localhost:8080/config?api_key="API KEY"&page=3&results=5&sort="name"`
 
-Deleting a configuration
+### Delete
 You can delete a specific configuration by passing a DELETE method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&name="configuration_name"`
 
-Creating a configuration
+### Create
 You can create a specific configuration by passing a POST method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&name=host30&hostname=www.yahoo.com&port=1111&username=julie`
 
 If all configuration paramaters are not present, an error will be returned.
 
-Modify a configuration
+### Modify
 You can modify a specific configuration by passing in a PUT method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&configname="configuration_name"&name="new name"...`
