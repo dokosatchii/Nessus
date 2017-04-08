@@ -48,22 +48,19 @@ And of course, you can string the above commands together:
 
 `https://localhost:8080/config?api_key="API KEY"&page=3&results=5&sort="name"`
 
-### Delete
+#### Delete
 You can delete a specific configuration by passing a DELETE method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&name="configuration_name"`
 
-### Create
+#### Create
 You can create a specific configuration by passing a POST method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&name=host30&hostname=www.yahoo.com&port=1111&username=julie`
 
 If all configuration paramaters are not present, an error will be returned.
 
-### Modify
+#### Modify
 You can modify a specific configuration by passing in a PUT method to the following enpoint:
 
 `https://localhost:8080/config?api_key="API KEY"&configname="configuration_name"&name="new name"...`
-
-
-
