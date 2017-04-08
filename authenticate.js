@@ -131,7 +131,7 @@ var saveToken = function(token, user, callback) {
             users.forEach(function(value) {
                 if(value['name'] == user) {
                     found = 1;
-                    return value['name'] = token;
+                    return value['token'] = token;
                 }
             });
             if(!found) {

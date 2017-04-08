@@ -200,7 +200,7 @@ function modifyConfig(response, credentials, callback) {
 }
 
 //Creates an entirely new configuration, errors if all 
-parameters are not passed    
+//parameters are not passed    
 function createConfig(response, credentials, callback) { 
     if('api_key' in credentials) {
         auth.isAuthorized(credentials['api_key'], function (allowed) {
